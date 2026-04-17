@@ -3,4 +3,4 @@ node_modules
 .next
 .env.local
 .env.production
-deploy-vercel.sh
+deploy-vercel.shtsconfig.tsbuildinfo

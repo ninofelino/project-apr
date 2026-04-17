@@ -1054,3 +1054,71 @@ export const tasks = pgTable("tasks", {
 	status: text().default('pending').notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
+
+export const salesCategories = pgTable("sales_categories", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	description: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+});
+
+export const salesProducts = pgTable("sales_products", {
+	id: serial().primaryKey().notNull(),
+	categoryId: integer("category_id"),
+	sku: varchar({ length: 50 }).notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	price: numeric({ precision: 12, scale: 2 }).notNull(),
+	stock: integer().default(0).notNull(),
+	imageUrl: text("image_url"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		salesProductsCategoryIdSalesCategoriesIdFk: foreignKey({
+			columns: [table.categoryId],
+			foreignColumns: [salesCategories.id],
+			name: "sales_products_category_id_sales_categories_id_fk"
+		}),
+		salesProductsSkuUnique: unique("sales_products_sku_unique").on(table.sku),
+	}
+});
+
+export const salesTransactions = pgTable("sales_transactions", {
+	id: serial().primaryKey().notNull(),
+	transactionNumber: varchar("transaction_number", { length: 50 }).notNull(),
+	subtotalAmount: numeric("subtotal_amount", { precision: 12, scale: 2 }).default('0').notNull(),
+	discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).default('0').notNull(),
+	totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+	paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
+	paymentStatus: varchar("payment_status", { length: 20 }).default('PAID').notNull(),
+	notes: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		salesTransactionsTransactionNumberUnique: unique("sales_transactions_transaction_number_unique").on(table.transactionNumber),
+	}
+});
+
+export const salesTransactionItems = pgTable("sales_transaction_items", {
+	id: serial().primaryKey().notNull(),
+	transactionId: integer("transaction_id").notNull(),
+	productId: integer("product_id").notNull(),
+	quantity: integer().notNull(),
+	unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+	subtotal: numeric({ precision: 12, scale: 2 }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => {
+	return {
+		salesTransactionItemsTransactionIdSalesTransactionsIdFk: foreignKey({
+			columns: [table.transactionId],
+			foreignColumns: [salesTransactions.id],
+			name: "sales_transaction_items_transaction_id_sales_transactions_id_fk"
+		}),
+		salesTransactionItemsProductIdSalesProductsIdFk: foreignKey({
+			columns: [table.productId],
+			foreignColumns: [salesProducts.id],
+			name: "sales_transaction_items_product_id_sales_products_id_fk"
+		}),
+	}
+});
